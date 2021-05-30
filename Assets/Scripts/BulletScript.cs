@@ -36,6 +36,6 @@ public class BulletScript : MonoBehaviour
     {
         direction = dir;
         velocity = vel;
-        rb2d.AddForce(direction * projectileSpeed + (velocity*50));
+        rb2d.AddForce(direction * projectileSpeed + (velocity*25));
     }
 }
