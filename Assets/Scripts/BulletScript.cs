@@ -8,6 +8,7 @@ public class BulletScript : MonoBehaviour
     float initTime;
     Rigidbody2D rb2d;
     public float projectileSpeed;
+    public int damage;
     Vector2 direction = new Vector2(0, 0);
     Vector2 velocity = new Vector2(0, 0);
 
@@ -27,6 +28,12 @@ public class BulletScript : MonoBehaviour
         }
     }
 
+    void OnCollisionEnter2D(Collision2D solid)
+    {
+        Destroy(gameObject);
+        Debug.Log("Collided with " +solid.gameObject);
+    }
+
     private void OnBecameInvisible()
     {
         Destroy(gameObject);
@@ -38,4 +45,6 @@ public class BulletScript : MonoBehaviour
         velocity = vel;
         rb2d.AddForce(direction * projectileSpeed + (velocity*25));
     }
+
+
 }

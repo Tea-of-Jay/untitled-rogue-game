@@ -10,6 +10,7 @@ public class EnemyScript : MonoBehaviour
     float timeToMove = 0.0f;
     Vector2 lookDir = new Vector2(0, 0);
     public float enemySpeed;
+    public int enemyHP;
 
 
     // Start is called before the first frame update
@@ -33,7 +34,6 @@ public class EnemyScript : MonoBehaviour
                     lookDir.x = Random.Range(-1.0f, 1.0f);
                     lookDir.y = Random.Range(-1.0f, 1.0f);
                     lookDir.Normalize();
-                    Debug.Log(lookDir);
                     timeToMove = Random.Range(1.0f, 3.0f);
                     state = EnemyState.Travel;
                 }
@@ -47,7 +47,6 @@ public class EnemyScript : MonoBehaviour
                     pos.x = pos.x + enemySpeed * lookDir.x * Time.deltaTime;
                     pos.y = pos.y + enemySpeed * lookDir.y * Time.deltaTime;
                     rb2d.MovePosition(pos);
-                    Debug.Log(pos);
                     timeToMove -= Time.deltaTime;
                 }else{
                     state = EnemyState.Idle;
@@ -63,6 +62,23 @@ public class EnemyScript : MonoBehaviour
             {
                 break;
             }
+        }
+    }
+    void OnTriggerEnter2D(Collider2D playerAttack)
+    {
+        //Destroy(gameObject);
+        int dmg = playerAttack.gameObject.GetComponent<BulletScript>().damage;
+        TakeDamage(dmg);
+        Destroy(playerAttack.gameObject);
+        Debug.Log("Hit by " +playerAttack.gameObject);
+    }
+
+    void TakeDamage(int d)
+    {
+        enemyHP -= d;
+        if(enemyHP <= 0)
+        {
+            Destroy(gameObject);
         }
     }
 }
