@@ -3,7 +3,11 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - PlayerAttack
+  - EnemyAttack
+  - EnemyVision
+  - Enemy
   layers:
   - Default
   - TransparentFX
@@ -16,7 +20,7 @@ TagManager:
   - 
   - Player
   - PlayerAttacks
-  - 
+  - PlayerAttackHitbox
   - 
   - 
   - 
@@ -26,6 +30,7 @@ TagManager:
   - 
   - Enemy
   - EnemyAttacks
+  - EnemyAttackHitbox
   - 
   - 
   - 
@@ -35,8 +40,7 @@ TagManager:
   - 
   - 
   - 
-  - 
-  - 
+  - Terrain
   m_SortingLayers:
   - name: Default
     uniqueID: 0
