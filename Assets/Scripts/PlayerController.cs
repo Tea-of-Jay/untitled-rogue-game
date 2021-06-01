@@ -51,23 +51,6 @@ public class PlayerController : MonoBehaviour
         rb2d.MovePosition(pos);
     }
 
-    //If the player enters a trigger...
-    void OnTriggerStay2D(Collider2D trigger)
-    {
-        //Determine which trigger type was entered.
-        // switch(trigger.tag)
-        // {
-        //     //If the player entered the vision range of an enemy, make sure enemy is NOT aggro AND there is NOT an obstructed linecast between the player and enemy.
-        //     case "EnemyVision":
-        //         RaycastHit2D ray = Physics2D.Raycast(transform.position, trigger.GetComponent<Collider2D>().GetComponentInParent<Transform>().position, 
-        //             1 << LayerMask.NameToLayer("Terrain")); //Cast ray
-        //         Debug.Log("Ray found " +ray.collider);
-        //         //if(ray.collider == null) && !trigger.GetComponent<Collider2D>().GetComponentInParent<EnemyScript>().GetState().Equals("Aggro"))
-        //             //trigger.GetComponent<Collider2D>().GetComponentInParent<EnemyScript>().ChangeState("Aggro");
-        //         break;
-        // }
-    }
-
     //Perform primary attack. TODO: when adding new characters, move this into character specific scripts(?)
     public void PrimaryAttack() //temporarily just launches a throwing knife by creating one and calling it's function 'Shoot().'
     {

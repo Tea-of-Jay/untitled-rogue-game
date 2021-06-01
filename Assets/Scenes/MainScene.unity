@@ -6630,7 +6630,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1658435452}
   - component: {fileID: 1658435451}
-  m_Layer: 0
+  m_Layer: 31
   m_Name: Grid
   m_TagString: Untagged
   m_Icon: {fileID: 0}

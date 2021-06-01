@@ -8,7 +8,9 @@ public class EnemyScript : MonoBehaviour
     public EnemyState state;
     float timeTillMove;
     float timeToMove = 0.0f;
+    List<Collider2D> colliders = new List<Collider2D>();
     Vector2 lookDir = new Vector2(0, 0);
+    Transform targetPlayer;
     public float enemySpeed;
     public int enemyHP;
 
@@ -24,7 +26,7 @@ public class EnemyScript : MonoBehaviour
     void Update()
     {
         //Perform different actions depending on state. Travel is in FixedUpdate().
-        //Debug.Log(state);
+        Debug.DrawLine(transform.position, ((Vector2)transform.position + (lookDir * 3)), Color.cyan);
         switch(state) 
         { 
             //If idle, reduce time until moving next.
@@ -39,6 +41,7 @@ public class EnemyScript : MonoBehaviour
                     timeToMove = Random.Range(1.0f, 3.0f);
                     state = EnemyState.Travel; //change state to Travel.
                 }
+                CheckVision(); //Call CheckVision, which will set state to Aggro if there's a valid player nearby.
                 break;
             case EnemyState.Travel:
                 if(timeToMove <= 0.0f)
@@ -59,11 +62,21 @@ public class EnemyScript : MonoBehaviour
     //FixedUpdate is called each physics step.
     void FixedUpdate()
     {
+        Vector2 pos = rb2d.position;
         switch(state)
-        { //If travel, do movement in set direction.
+        {   
+            //If travel, do movement in set direction.
             case EnemyState.Travel:
                 //Debug.Log("Currently Travelling. Time to move: " +timeToMove);
-                Vector2 pos = rb2d.position;
+                pos.x = pos.x + enemySpeed * lookDir.x * Time.deltaTime;
+                pos.y = pos.y + enemySpeed * lookDir.y * Time.deltaTime;
+                rb2d.MovePosition(pos);
+                timeToMove -= Time.deltaTime;
+                CheckVision(); //Call CheckVision, which will set state to Aggro if there's a valid player nearby.
+                break;
+            //If aggro, move towards targeted player.
+            case EnemyState.Aggro:
+                lookDir = (targetPlayer.position - transform.position).normalized;
                 pos.x = pos.x + enemySpeed * lookDir.x * Time.deltaTime;
                 pos.y = pos.y + enemySpeed * lookDir.y * Time.deltaTime;
                 rb2d.MovePosition(pos);
@@ -88,6 +101,26 @@ public class EnemyScript : MonoBehaviour
                 break;
             }
         }
+    }
+
+    //Vision check to see if there is a valid player in line of sight to target, and become Aggro if so.
+    bool CheckVision()
+    {
+        ContactFilter2D filter = new ContactFilter2D();
+        filter.SetLayerMask(LayerMask.GetMask("Player"));
+        if(Physics2D.OverlapCircle(transform.position, 10.0f, filter, colliders) > 0) //See if a player is in range of this enemy.
+        {
+            Transform player = colliders[colliders.Count-1].gameObject.GetComponent<Transform>(); //If so, grab player's Collider2D at the end of array.
+            Vector2 playerDir = (player.position - transform.position).normalized;
+            if(Vector2.Dot(playerDir, lookDir) > 0.5f) //If the dot product of the enemy's look direction and direction of player from enemy greater than 0.5, become aggro on player.
+            {
+                lookDir = playerDir;
+                targetPlayer = player;
+                state = EnemyState.Aggro;
+                return true;
+            }
+        }
+        return false;
     }
 
     //Public HP reducer. Destroy this enemy if HP falls to 0 or below.
