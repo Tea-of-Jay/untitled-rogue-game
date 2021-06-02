@@ -106,13 +106,15 @@ public class EnemyScript : MonoBehaviour
     //Vision check to see if there is a valid player in line of sight to target, and become Aggro if so.
     bool CheckVision()
     {
-        ContactFilter2D filter = new ContactFilter2D();
-        filter.SetLayerMask(LayerMask.GetMask("Player"));
-        if(Physics2D.OverlapCircle(transform.position, 10.0f, filter, colliders) > 0) //See if a player is in range of this enemy.
+        ContactFilter2D playerFilter = new ContactFilter2D();
+        playerFilter.SetLayerMask(LayerMask.GetMask("Player"));
+        if(Physics2D.OverlapCircle(transform.position, 10.0f, playerFilter, colliders) > 0) //See if a player is in range of this enemy.
         {
             Transform player = colliders[colliders.Count-1].gameObject.GetComponent<Transform>(); //If so, grab player's Collider2D at the end of array.
-            Vector2 playerDir = (player.position - transform.position).normalized;
-            if(Vector2.Dot(playerDir, lookDir) > 0.5f) //If the dot product of the enemy's look direction and direction of player from enemy greater than 0.5, become aggro on player.
+            Vector2 playerDir = (player.position - transform.position);
+            RaycastHit2D ray = Physics2D.Raycast(transform.position, playerDir, Vector2.Distance(player.position, transform.position), LayerMask.GetMask("Terrain"));
+            Debug.DrawRay(transform.position, playerDir, Color.cyan);
+            if(ray.collider == null && Vector2.Dot(playerDir, lookDir) > 0.5f) //If the dot product of the enemy's look direction and direction of player from enemy greater than 0.5, become aggro on player.
             {
                 lookDir = playerDir;
                 targetPlayer = player;

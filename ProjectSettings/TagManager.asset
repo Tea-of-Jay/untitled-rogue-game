@@ -8,6 +8,7 @@ TagManager:
   - EnemyAttack
   - EnemyVision
   - Enemy
+  - Terrain
   layers:
   - Default
   - TransparentFX
