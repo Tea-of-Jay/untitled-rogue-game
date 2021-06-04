@@ -9,8 +9,9 @@ public class EnemyScript : MonoBehaviour
     float timeTillMove;
     float timeToMove = 0.0f;
     List<Collider2D> colliders = new List<Collider2D>();
-    Vector2 lookDir = new Vector2(0, 0);
+    Vector2 lookDir;
     Transform targetPlayer;
+    Vector2 lastKnownPlayerPos;
     public float enemySpeed;
     public int enemyHP;
 
@@ -18,6 +19,7 @@ public class EnemyScript : MonoBehaviour
     //Start is called before the first frame update.
     void Start()
     {
+        lookDir = GetRandomDirection();
         rb2d = GetComponent<Rigidbody2D>();
         timeTillMove = Random.Range(0.5f, 2.5f); //Random time to begin movement between 0.5 and 2.5 seconds.
     }
@@ -26,29 +28,30 @@ public class EnemyScript : MonoBehaviour
     void Update()
     {
         //Perform different actions depending on state. Travel is in FixedUpdate().
-        Debug.DrawLine(transform.position, ((Vector2)transform.position + (lookDir * 3)), Color.cyan);
         switch(state) 
         { 
             //If idle, reduce time until moving next.
             case EnemyState.Idle:
                 timeTillMove -= Time.deltaTime;
-                //Debug.Log("Currently Idle. Time till move: " +timeTillMove);
                 if(timeTillMove <= 0.0f) //Pick a random direction and a random time to move between 1 and 3 seconds.
                 {
-                    lookDir.x = Random.Range(-1.0f, 1.0f);
-                    lookDir.y = Random.Range(-1.0f, 1.0f);
-                    lookDir.Normalize();
+                    lookDir = GetRandomDirection(); //Get a random direction to look.
+                    RaycastHit2D dirCheck = Physics2D.Raycast(transform.position, lookDir, 3.0f, LayerMask.GetMask("Terrain")); //Cast a ray and check for solid terrain closeby
+                    while(dirCheck.collider != null) //While a new look direction is facing too close to a wall, make a new look direction.
+                    {
+                        lookDir = GetRandomDirection();
+                        dirCheck = Physics2D.Raycast(transform.position, lookDir, 3.0f, LayerMask.GetMask("Terrain"));
+                    }
                     timeToMove = Random.Range(1.0f, 3.0f);
-                    state = EnemyState.Travel; //change state to Travel.
+                    ChangeState("Travel"); //change state to Travel.
                 }
-                CheckVision(); //Call CheckVision, which will set state to Aggro if there's a valid player nearby.
+                if(CheckVision()) //Call CheckVision, and set state to Aggro if it returns true.
+                {
+                    ChangeState("Aggro");
+                } 
                 break;
             case EnemyState.Travel:
-                if(timeToMove <= 0.0f)
-                {
-                    timeTillMove = Random.Range(0.5f, 2.5f);
-                    state = EnemyState.Idle;
-                }
+            //Might not need anything here?
                 break;
             //Currently unimplemented.
             case EnemyState.Aggro:
@@ -63,22 +66,42 @@ public class EnemyScript : MonoBehaviour
     void FixedUpdate()
     {
         Vector2 pos = rb2d.position;
+        Debug.DrawRay(transform.position, lookDir, Color.cyan);
+        Debug.DrawRay(transform.position, new Vector2(lookDir.x * Mathf.Cos(1.5f) - lookDir.y * Mathf.Sin(1.5f), lookDir.x * Mathf.Sin(1.5f) + lookDir.y * Mathf.Cos(1.5f)), Color.green);
+        Debug.DrawRay(transform.position, new Vector2(lookDir.x * Mathf.Cos(-1.5f) - lookDir.y * Mathf.Sin(-1.5f), lookDir.x * Mathf.Sin(-1.5f) + lookDir.y * Mathf.Cos(-1.5f)), Color.green);
+        Debug.DrawRay(transform.position, new Vector2(lookDir.x * Mathf.Cos(0.4f) - lookDir.y * Mathf.Sin(0.4f), lookDir.x * Mathf.Sin(0.4f) + lookDir.y * Mathf.Cos(0.4f)), Color.blue);
+        Debug.DrawRay(transform.position, new Vector2(lookDir.x * Mathf.Cos(-0.4f) - lookDir.y * Mathf.Sin(-0.4f), lookDir.x * Mathf.Sin(-0.4f) + lookDir.y * Mathf.Cos(-0.4f)), Color.blue);
         switch(state)
-        {   
+        {
             //If travel, do movement in set direction.
             case EnemyState.Travel:
-                //Debug.Log("Currently Travelling. Time to move: " +timeToMove);
-                pos.x = pos.x + enemySpeed * lookDir.x * Time.deltaTime;
-                pos.y = pos.y + enemySpeed * lookDir.y * Time.deltaTime;
-                rb2d.MovePosition(pos);
-                timeToMove -= Time.deltaTime;
-                CheckVision(); //Call CheckVision, which will set state to Aggro if there's a valid player nearby.
+                pos = pos + enemySpeed * lookDir * Time.deltaTime; //Update position to move to
+                rb2d.MovePosition(pos); //Move to position
+                timeToMove -= Time.deltaTime; //Reduce time remaining to move
+                RaycastHit2D wallCheck = Physics2D.Raycast(transform.position, lookDir, 0.8f, LayerMask.GetMask("Terrain")); //Create a short line to check for solid terrain
+                if(timeToMove <= 0.0f || wallCheck.collider != null) //If there's no time left to move OR there is solid terrain close ahead
+                {
+                    ChangeState("Idle"); //Become idle.
+                }
+                if(CheckVision()) //Call CheckVision, and set state to Aggro if it returns true.
+                {
+                    ChangeState("Aggro"); //Become aggro
+                } 
                 break;
             //If aggro, move towards targeted player.
             case EnemyState.Aggro:
-                lookDir = (targetPlayer.position - transform.position).normalized;
-                pos.x = pos.x + enemySpeed * lookDir.x * Time.deltaTime;
-                pos.y = pos.y + enemySpeed * lookDir.y * Time.deltaTime;
+                RaycastHit2D vision = Physics2D.Raycast(transform.position, (targetPlayer.position - transform.position).normalized, Vector2.Distance(targetPlayer.position, transform.position), LayerMask.GetMask("Terrain"));
+                if(vision.collider == null)
+                {
+                    lastKnownPlayerPos = targetPlayer.position;
+                    lookDir = (targetPlayer.position - transform.position).normalized;
+                }
+                if(lastKnownPlayerPos == (Vector2)transform.position)
+                {
+                    ChangeState("Idle");
+                    break;
+                }
+                pos = pos + enemySpeed * lookDir * Time.deltaTime;
                 rb2d.MovePosition(pos);
                 timeToMove -= Time.deltaTime;
                 break;
@@ -97,7 +120,6 @@ public class EnemyScript : MonoBehaviour
                 int dmg = trigger.gameObject.GetComponent<BulletScript>().damage;
                 TakeDamage(dmg);
                 Destroy(trigger.gameObject);
-                //Debug.Log("Hit by " +trigger.gameObject);
                 break;
             }
         }
@@ -116,9 +138,8 @@ public class EnemyScript : MonoBehaviour
             Debug.DrawRay(transform.position, playerDir, Color.cyan);
             if(ray.collider == null && Vector2.Dot(playerDir, lookDir) > 0.5f) //If the dot product of the enemy's look direction and direction of player from enemy greater than 0.5, become aggro on player.
             {
-                lookDir = playerDir;
                 targetPlayer = player;
-                state = EnemyState.Aggro;
+                lastKnownPlayerPos = targetPlayer.position;
                 return true;
             }
         }
@@ -141,12 +162,14 @@ public class EnemyScript : MonoBehaviour
         switch(s)
         {
             case "Idle":
+                timeTillMove = Random.Range(0.5f, 2.5f);
                 state = EnemyState.Idle;
                 break;
             case "Travel":
                 state = EnemyState.Travel;
                 break;
             case "Aggro":
+                lookDir = (targetPlayer.position - transform.position);
                 state = EnemyState.Aggro;
                 break;
             case "Attack":
@@ -170,6 +193,11 @@ public class EnemyScript : MonoBehaviour
             default:
                 return "None";
         }
+    }
+
+    Vector2 GetRandomDirection()
+    {
+        return new Vector2(Random.Range(-1.0f, 1.0f), Random.Range(-1.0f, 1.0f)).normalized;
     }
 }
 
