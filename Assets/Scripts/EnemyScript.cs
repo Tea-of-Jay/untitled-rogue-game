@@ -8,13 +8,18 @@ public class EnemyScript : MonoBehaviour
     public EnemyState state;
     float timeTillMove;
     float timeToMove = 0.0f;
+    float pi = Mathf.PI;
+    bool wallRight, wallAngleRight, wallLeft, wallAngleLeft;
     List<Collider2D> colliders = new List<Collider2D>();
-    Vector2 lookDir;
+    Vector2 lookDir, lastKnownPlayerPos;
     Transform targetPlayer;
-    Vector2 lastKnownPlayerPos;
+
+    //A line to check for solid terrain ahead, 
+        //A line to check for solid terrain at an angle to the right, A line to check for solid terrain at an angle to the left,
+            //A line to check for solid terrain directly to the right, A line to check for solid terrain directly to the left
+    RaycastHit2D fwdCheck, rightAngleCheck, leftAngleCheck, rightCheck, leftCheck;
     public float enemySpeed;
     public int enemyHP;
-
 
     //Start is called before the first frame update.
     void Start()
@@ -45,7 +50,7 @@ public class EnemyScript : MonoBehaviour
                     timeToMove = Random.Range(1.0f, 3.0f);
                     ChangeState("Travel"); //change state to Travel.
                 }
-                if(CheckVision()) //Call CheckVision, and set state to Aggro if it returns true.
+                if(CheckForPlayer()) //Call CheckForPlayer, and set state to Aggro if it returns true.
                 {
                     ChangeState("Aggro");
                 } 
@@ -66,57 +71,71 @@ public class EnemyScript : MonoBehaviour
     void FixedUpdate()
     {
         Vector2 pos = rb2d.position;
-        Debug.DrawRay(transform.position, lookDir, Color.cyan);
+
         //estimated vision
-        Debug.DrawRay(transform.position, new Vector2(lookDir.x * Mathf.Cos(1.5f) - lookDir.y * Mathf.Sin(1.5f), lookDir.x * Mathf.Sin(1.5f) + lookDir.y * Mathf.Cos(1.5f)), Color.green);
-        Debug.DrawRay(transform.position, new Vector2(lookDir.x * Mathf.Cos(-1.5f) - lookDir.y * Mathf.Sin(-1.5f), lookDir.x * Mathf.Sin(-1.5f) + lookDir.y * Mathf.Cos(-1.5f)), Color.green);
-        //TODO: These rays will detect walls
-        Debug.DrawRay(transform.position, new Vector2(lookDir.x * Mathf.Cos(0.4f) - lookDir.y * Mathf.Sin(0.4f), lookDir.x * Mathf.Sin(0.4f) + lookDir.y * Mathf.Cos(0.4f)), Color.blue); //left
-        Debug.DrawRay(transform.position, new Vector2(lookDir.x * Mathf.Cos(-0.4f) - lookDir.y * Mathf.Sin(-0.4f), lookDir.x * Mathf.Sin(-0.4f) + lookDir.y * Mathf.Cos(-0.4f)), Color.magenta); //right
+
+        //look direction
+        Debug.DrawRay(transform.position, lookDir, Color.green);
+        //angles
+        Debug.DrawRay(transform.position, new Vector2(lookDir.x * Mathf.Cos(pi/2) - lookDir.y * Mathf.Sin(pi/2), lookDir.x * Mathf.Sin(pi/2) + lookDir.y * Mathf.Cos(pi/2)), Color.blue);
+        Debug.DrawRay(transform.position, new Vector2(lookDir.x * Mathf.Cos(-pi/2) - lookDir.y * Mathf.Sin(-pi/2), lookDir.x * Mathf.Sin(-pi/2) + lookDir.y * Mathf.Cos(-pi/2)), Color.red);
+        //directly left and right
+        Debug.DrawRay(transform.position, new Vector2(lookDir.x * Mathf.Cos(pi/8) - lookDir.y * Mathf.Sin(pi/8), lookDir.x * Mathf.Sin(pi/8) + lookDir.y * Mathf.Cos(pi/8)), Color.cyan); //left
+        Debug.DrawRay(transform.position, new Vector2(lookDir.x * Mathf.Cos(-pi/8) - lookDir.y * Mathf.Sin(-pi/8), lookDir.x * Mathf.Sin(-pi/8) + lookDir.y * Mathf.Cos(-pi/8)), Color.magenta); //right
+
         switch(state)
         {
             //If travel, do movement in set direction.
             case EnemyState.Travel:
+            {
+                UpdateLineOfSight();
+        
+                if(wallAngleRight ^ wallAngleLeft) //If a left wall is detected at an angle XOR a right wall is detected at an angle
+                {
+                    float angleChange = (wallAngleRight ? 0.1f : 0f) + (wallAngleLeft ? -0.1f : 0f) + (wallRight ? 0.1f : 0f) + (wallLeft ? -0.1f : 0f);
+                    //If a wall is detected right, make lookDir rotate left. (+0.1). If not, make lookDir rotate right (-0.1)
+                    //(wallRight ? 0.1f : -0.1f) will evaluate to 0.1f if wallRight is TRUE, and -0.1f is wallRight is FALSE.
+                    Vector2 newDir = lookDir;
+                    newDir.x = lookDir.x * Mathf.Cos(angleChange) - lookDir.y * Mathf.Sin(angleChange);
+                    newDir.y = lookDir.x * Mathf.Sin(angleChange) + lookDir.y * Mathf.Cos(angleChange);
+                    lookDir = newDir;
+                }
+
                 pos = pos + enemySpeed * lookDir * Time.deltaTime; //Update position to move to
                 rb2d.MovePosition(pos); //Move to position
                 timeToMove -= Time.deltaTime; //Reduce time remaining to move
 
-                RaycastHit2D fwdCheck = Physics2D.Raycast(transform.position, lookDir, 0.8f, LayerMask.GetMask("Terrain")); //Create a short line to check for solid terrain
-                RaycastHit2D rightCheck = Physics2D.Raycast(transform.position, 
-                    new Vector2(lookDir.x * Mathf.Cos(-0.4f) - lookDir.y * Mathf.Sin(-0.4f), lookDir.x * Mathf.Sin(-0.4f) + lookDir.y * Mathf.Cos(-0.4f)), 
-                        1.0f, LayerMask.GetMask("Terrain")); //Create a short line to check for solid terrain to the right
-                RaycastHit2D leftCheck = Physics2D.Raycast(transform.position, 
-                    new Vector2(lookDir.x * Mathf.Cos(0.4f) - lookDir.y * Mathf.Sin(0.4f), lookDir.x * Mathf.Sin(0.4f) + lookDir.y * Mathf.Cos(0.4f)), 
-                        1.0f, LayerMask.GetMask("Terrain")); //Create a short line to check for solid terrain to the left
-
-                bool wallRight = rightCheck.collider != null;
-                bool wallLeft = leftCheck.collider != null;
-                if(wallRight ^ wallLeft) //If a left wall is detected XOR a right wall is detected (this will only be entered if ONLY ONE of these is true.)
-                {
-                    //If a wall is detected right, make lookDir rotate left. (+0.1). If not, make lookDir rotate right (-0.1)
-                    //(wallRight ? 0.1f : -0.1f) will evaluate to 0.1f if wallRight is TRUE, and -0.1f is wallRight is FALSE.
-                    Vector2 newDir = lookDir;
-                    newDir.x = lookDir.x * Mathf.Cos(wallRight ? 0.1f : -0.1f) - lookDir.y * Mathf.Sin(wallRight ? 0.1f : -0.1f);
-                    newDir.y = lookDir.x * Mathf.Sin(wallRight ? 0.1f : -0.1f) + lookDir.y * Mathf.Cos(wallRight ? 0.1f : -0.1f);
-                    lookDir = newDir;
-                }
                 if(timeToMove <= 0.0f || fwdCheck.collider != null) //If there's no time left to move OR there is solid terrain close ahead
                 {
                     ChangeState("Idle"); //Become idle.
                 }
-                if(CheckVision()) //Call CheckVision, and set state to Aggro if it returns true.
+                if(CheckForPlayer()) //Call CheckForPlayer, and set state to Aggro if it returns true.
                 {
-                    ChangeState("Aggro"); //Become aggro
-                } 
+                    ChangeState("Aggro"); //Become aggro.
+                }
+            }
                 break;
             //If aggro, move towards targeted player.
             case EnemyState.Aggro:
-                RaycastHit2D vision = Physics2D.Raycast(transform.position, (targetPlayer.position - transform.position).normalized, 
+            {
+                RaycastHit2D visionCheck = Physics2D.Raycast(transform.position, (lastKnownPlayerPos - (Vector2)transform.position).normalized, 
                     Vector2.Distance(targetPlayer.position, transform.position), LayerMask.GetMask("Terrain"));
-                if(vision.collider == null)
+
+                if(visionCheck.collider == null) //If there is no wall in between the enemy and player, and no wall to the left XOR right.
                 {
                     lastKnownPlayerPos = targetPlayer.position;
-                    lookDir = (targetPlayer.position - transform.position).normalized;
+                }
+                lookDir = (lastKnownPlayerPos - (Vector2)transform.position).normalized;
+                UpdateLineOfSight();
+                float angleChange = (wallAngleRight ? 0.1f : 0f) + (wallAngleLeft ? -0.1f : 0f) + (wallRight ? 0.1f : 0f) + (wallLeft ? -0.1f : 0f);
+                    //If a wall is detected right, make lookDir rotate left. (+0.1). If not, make lookDir rotate right (-0.1)
+                    //(wallRight ? 0.1f : -0.1f) will evaluate to 0.1f if wallRight is TRUE, and -0.1f is wallRight is FALSE.
+                if(angleChange != 0)
+                {
+                    Vector2 newDir = lookDir;
+                    newDir.x = lookDir.x * Mathf.Cos(angleChange) - lookDir.y * Mathf.Sin(angleChange);
+                    newDir.y = lookDir.x * Mathf.Sin(angleChange) + lookDir.y * Mathf.Cos(angleChange);
+                    lookDir = newDir;
                 }
                 //if(lastKnownPlayerPos == (Vector2)transform.position)
                 //{
@@ -125,7 +144,9 @@ public class EnemyScript : MonoBehaviour
                 //}
                 pos = pos + enemySpeed * lookDir * Time.deltaTime;
                 rb2d.MovePosition(pos);
-                timeToMove -= Time.deltaTime;
+            }
+            break;
+            default:
                 break;
         }
     }
@@ -148,7 +169,7 @@ public class EnemyScript : MonoBehaviour
     }
 
     //Vision check to see if there is a valid player in line of sight to target, and become Aggro if so.
-    bool CheckVision()
+    bool CheckForPlayer()
     {
         ContactFilter2D playerFilter = new ContactFilter2D();
         playerFilter.SetLayerMask(LayerMask.GetMask("Player"));
@@ -166,6 +187,30 @@ public class EnemyScript : MonoBehaviour
             }
         }
         return false;
+    }
+
+    //Updates fwdCheck, rightCheck, leftCheck, rightAngleCheck, and leftAngleCheck depending on current location and look direction.
+    void UpdateLineOfSight()
+    {
+        float pi = Mathf.PI;
+        fwdCheck = Physics2D.Raycast(transform.position, lookDir, 1.0f, LayerMask.GetMask("Terrain")); //Create a short line to check for terrain straight ahead
+        rightCheck = Physics2D.Raycast(transform.position, 
+            new Vector2(lookDir.x * Mathf.Cos(-(pi/2)) - lookDir.y * Mathf.Sin(-(pi/2)), lookDir.x * Mathf.Sin(-(pi/2)) + lookDir.y * Mathf.Cos(-(pi/2))), 
+                1.5f, LayerMask.GetMask("Terrain"));
+        leftCheck = Physics2D.Raycast(transform.position, 
+            new Vector2(lookDir.x * Mathf.Cos(pi/2) - lookDir.y * Mathf.Sin(pi/2), lookDir.x * Mathf.Sin(pi/2) + lookDir.y * Mathf.Cos(pi/2)), 
+                1.5f, LayerMask.GetMask("Terrain"));
+        rightAngleCheck = Physics2D.Raycast(transform.position, 
+            new Vector2(lookDir.x * Mathf.Cos(-(pi/8)) - lookDir.y * Mathf.Sin(-(pi/8)), lookDir.x * Mathf.Sin(-(pi/8)) + lookDir.y * Mathf.Cos(-(pi/8))), 
+                1.5f, LayerMask.GetMask("Terrain")); //Create a short line to check for solid terrain at an angle to the right
+        leftAngleCheck = Physics2D.Raycast(transform.position, 
+            new Vector2(lookDir.x * Mathf.Cos(pi/8) - lookDir.y * Mathf.Sin(pi/8), lookDir.x * Mathf.Sin(pi/8) + lookDir.y * Mathf.Cos(pi/8)), 
+                1.5f, LayerMask.GetMask("Terrain")); //Create a short line to check for solid terrain at an angle to the left
+        
+        wallAngleRight = rightAngleCheck.collider != null; //true if there is a wall to the right angle
+        wallAngleLeft = leftAngleCheck.collider != null; //true if there is a wall to the left angle
+        wallRight = rightCheck.collider != null; //true if wall directly right
+        wallLeft = leftCheck.collider != null; //true if wall directly left
     }
 
     //Public HP reducer. Destroy this enemy if HP falls to 0 or below.
