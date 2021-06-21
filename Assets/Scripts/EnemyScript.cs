@@ -11,7 +11,7 @@ public class EnemyScript : MonoBehaviour
     float pi = Mathf.PI;
     bool wallRight, wallAngleRight, wallLeft, wallAngleLeft;
     List<Collider2D> colliders = new List<Collider2D>();
-    Vector2 lookDir, lastKnownPlayerPos;
+    Vector2 lookDir, lastKnownPlayerPos, rightView, leftView;
     Transform targetPlayer;
 
     //A line to check for solid terrain ahead, 
@@ -118,34 +118,53 @@ public class EnemyScript : MonoBehaviour
             //If aggro, move towards targeted player.
             case EnemyState.Aggro:
             {
-                RaycastHit2D visionCheck = Physics2D.Raycast(transform.position, (lastKnownPlayerPos - (Vector2)transform.position).normalized, 
-                    Vector2.Distance(targetPlayer.position, transform.position), LayerMask.GetMask("Terrain"));
+                Vector2 lastKnownPlayerDir = (lastKnownPlayerPos - (Vector2)transform.position);
+                RaycastHit2D visionCheck = Physics2D.Raycast((Vector2)transform.position, lastKnownPlayerDir.normalized, 
+                    lastKnownPlayerDir.magnitude, LayerMask.GetMask("Terrain"));
+                Debug.DrawRay((Vector2)transform.position, lastKnownPlayerDir*lastKnownPlayerDir.magnitude, Color.white);
+                Debug.Log("saw: " +visionCheck.collider);
 
+                //TODO: currently a bug where sometimes the raycast goes through the terrain, yet returns no collider???
+                //ITS WHEN THE ENEMY IS CURRENTLY LOOKING AT A CORNER. HMMMM
                 if(visionCheck.collider == null) //If there is no wall in between the enemy and player, and no wall to the left XOR right.
                 {
+                    Debug.Log("spotted!");
+                    Debug.DrawRay((Vector2)transform.position, lastKnownPlayerDir*lastKnownPlayerDir.magnitude, Color.black, 5.0f);
                     lastKnownPlayerPos = targetPlayer.position;
                 }
-                lookDir = (lastKnownPlayerPos - (Vector2)transform.position).normalized;
                 UpdateLineOfSight();
-                float angleChange = (wallAngleRight ? 0.1f : 0f) + (wallAngleLeft ? -0.1f : 0f) + (wallRight ? 0.1f : 0f) + (wallLeft ? -0.1f : 0f);
-                    //If a wall is detected right, make lookDir rotate left. (+0.1). If not, make lookDir rotate right (-0.1)
-                    //(wallRight ? 0.1f : -0.1f) will evaluate to 0.1f if wallRight is TRUE, and -0.1f is wallRight is FALSE.
+                rightView.x = lookDir.y; rightView.y = -1*lookDir.x;
+                leftView = -1*rightView;
+                //add to angleChange if there is a wall at an angle to the right, directly to the right, and/or the player is to the left.
+                //reduce from angleChange if there is a wall at an angle to the left, directly left, and/or player is to the right.
+                //if angleChange is positive, the rotation goes counterclockwise. if negative, clockwise.
+                //TODO: currently, enemy can get stuck in dead ends.
+                float angleChange = (wallAngleRight ? 0.15f : 0f) + (wallAngleLeft ? -0.15f : 0f) 
+                    + (wallRight ? 0.2f : 0f) + (wallLeft ? -0.2f : 0f)
+                        + ((Vector2.Dot(lastKnownPlayerDir, leftView) > 0) ? 0.1f : 0f) + ((Vector2.Dot(lastKnownPlayerDir, rightView) > 0) ? -0.1f : 0f);
+                Debug.Log("angle: " +angleChange);
                 if(angleChange != 0)
                 {
                     Vector2 newDir = lookDir;
                     newDir.x = lookDir.x * Mathf.Cos(angleChange) - lookDir.y * Mathf.Sin(angleChange);
                     newDir.y = lookDir.x * Mathf.Sin(angleChange) + lookDir.y * Mathf.Cos(angleChange);
-                    lookDir = newDir;
+                    lookDir = newDir.normalized;
                 }
-                //if(lastKnownPlayerPos == (Vector2)transform.position)
-                //{
-                //    ChangeState("Idle");
-                //    break;
-                //}
+                    //if already looking close enough towards the last known player position, just set lookdir to playerdir.
+                else if(Vector2.Dot(lookDir, lastKnownPlayerDir) > 0.9f)
+                {
+                        lookDir = lastKnownPlayerDir.normalized;
+                }
+                //if close enough to the last known player location, become idle.
+                if(Vector2.Distance(lastKnownPlayerPos, transform.position) <= 0.5f)
+                {
+                    ChangeState("Idle");
+                    break;
+                }
                 pos = pos + enemySpeed * lookDir * Time.deltaTime;
                 rb2d.MovePosition(pos);
             }
-            break;
+                break;
             default:
                 break;
         }
@@ -176,9 +195,9 @@ public class EnemyScript : MonoBehaviour
         if(Physics2D.OverlapCircle(transform.position, 10.0f, playerFilter, colliders) > 0) //See if a player is in range of this enemy.
         {
             Transform player = colliders[colliders.Count-1].gameObject.GetComponent<Transform>(); //If so, grab player's Collider2D at the end of array.
-            Vector2 playerDir = (player.position - transform.position);
+            Vector2 playerDir = (player.position - transform.position).normalized;
             RaycastHit2D ray = Physics2D.Raycast(transform.position, playerDir, Vector2.Distance(player.position, transform.position), LayerMask.GetMask("Terrain"));
-            Debug.DrawRay(transform.position, playerDir, Color.cyan);
+            Debug.DrawRay(transform.position, (player.position - transform.position), Color.cyan);
             if(ray.collider == null && Vector2.Dot(playerDir, lookDir) > 0.5f) //If the dot product of the enemy's look direction and direction of player from enemy greater than 0.5, become aggro on player.
             {
                 targetPlayer = player;
