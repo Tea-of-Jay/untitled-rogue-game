@@ -11,7 +11,7 @@ public class EnemyScript : MonoBehaviour
     float pi = Mathf.PI;
     bool wallRight, wallAngleRight, wallLeft, wallAngleLeft;
     List<Collider2D> colliders = new List<Collider2D>();
-    Vector2 lookDir, lastKnownPlayerPos, rightView, leftView;
+    Vector2 lookDir, lastKnownPlayerPos, lastKnownPlayerDir, rightView, leftView;
     Transform targetPlayer;
 
     //A line to check for solid terrain ahead, 
@@ -118,30 +118,28 @@ public class EnemyScript : MonoBehaviour
             //If aggro, move towards targeted player.
             case EnemyState.Aggro:
             {
-                Vector2 lastKnownPlayerDir = (lastKnownPlayerPos - (Vector2)transform.position);
-                RaycastHit2D visionCheck = Physics2D.Raycast((Vector2)transform.position, lastKnownPlayerDir.normalized, 
-                    lastKnownPlayerDir.magnitude, LayerMask.GetMask("Terrain"));
-                Debug.DrawRay((Vector2)transform.position, lastKnownPlayerDir*lastKnownPlayerDir.magnitude, Color.white);
-                Debug.Log("saw: " +visionCheck.collider);
+                //Check to see if a line between the enemy's position and player position is unobstructed.
+                RaycastHit2D visionCheck = Physics2D.Linecast((Vector2)transform.position, (Vector2)targetPlayer.position, LayerMask.GetMask("Terrain"));
+                Debug.DrawRay((Vector2)transform.position, (lastKnownPlayerPos - (Vector2)transform.position), Color.white);
 
-                //TODO: currently a bug where sometimes the raycast goes through the terrain, yet returns no collider???
-                //ITS WHEN THE ENEMY IS CURRENTLY LOOKING AT A CORNER. HMMMM
-                if(visionCheck.collider == null) //If there is no wall in between the enemy and player, and no wall to the left XOR right.
+                if(visionCheck.collider == null) //If there is no wall in between the enemy and player, update knowledge about player location.
                 {
                     Debug.Log("spotted!");
-                    Debug.DrawRay((Vector2)transform.position, lastKnownPlayerDir*lastKnownPlayerDir.magnitude, Color.black, 5.0f);
                     lastKnownPlayerPos = targetPlayer.position;
+                    lastKnownPlayerDir = (lastKnownPlayerPos - (Vector2)transform.position);
+                    Debug.DrawRay((Vector2)transform.position, lastKnownPlayerDir, Color.black, 5.0f);
                 }
                 UpdateLineOfSight();
+                //update rightView to be a vector pointing 90 degrees to the right of lookDir, and leftView to point in the opposite direction of rightView.
                 rightView.x = lookDir.y; rightView.y = -1*lookDir.x;
                 leftView = -1*rightView;
                 //add to angleChange if there is a wall at an angle to the right, directly to the right, and/or the player is to the left.
                 //reduce from angleChange if there is a wall at an angle to the left, directly left, and/or player is to the right.
                 //if angleChange is positive, the rotation goes counterclockwise. if negative, clockwise.
                 //TODO: currently, enemy can get stuck in dead ends.
-                float angleChange = (wallAngleRight ? 0.15f : 0f) + (wallAngleLeft ? -0.15f : 0f) 
+                float angleChange = (wallAngleRight ? 0.1f : 0f) + (wallAngleLeft ? -0.1f : 0f) 
                     + (wallRight ? 0.2f : 0f) + (wallLeft ? -0.2f : 0f)
-                        + ((Vector2.Dot(lastKnownPlayerDir, leftView) > 0) ? 0.1f : 0f) + ((Vector2.Dot(lastKnownPlayerDir, rightView) > 0) ? -0.1f : 0f);
+                        + ((Vector2.Dot(lastKnownPlayerDir, leftView) > 0) ? 0.15f : 0f) + ((Vector2.Dot(lastKnownPlayerDir, rightView) > 0) ? -0.15f : 0f);
                 Debug.Log("angle: " +angleChange);
                 if(angleChange != 0)
                 {
