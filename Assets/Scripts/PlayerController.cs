@@ -3,17 +3,16 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-public class PlayerController : MonoBehaviour
+public abstract class PlayerController : MonoBehaviour
 {
-    Rigidbody2D rb2d;
+    protected Rigidbody2D rb2d;
+    protected Vector2 lookDir = new Vector2(1, 0);
+    protected Vector2 velocity = new Vector2(0, 0);
     float horizontal;
     float vertical;
-    Vector2 lookDir = new Vector2(1, 0);
-    Vector2 velocity = new Vector2(0, 0);
 
     public float playerSpeed;
-    public int playerHP;
-    public int playerMoney;
+    public int playerHP, playerMoney;
     public GameObject primaryAttackPrefab;
 
     //Start is called before the first frame update.
@@ -52,10 +51,5 @@ public class PlayerController : MonoBehaviour
     }
 
     //Perform primary attack. TODO: when adding new characters, move this into character specific scripts(?)
-    public void PrimaryAttack() //temporarily just launches a throwing knife by creating one and calling it's function 'Shoot().'
-    {
-        GameObject primaryAttack = Instantiate(primaryAttackPrefab, rb2d.position, Quaternion.identity);
-        BulletScript bullet = primaryAttack.GetComponent<BulletScript>();
-        bullet.Shoot(lookDir, velocity);
-    }
+    public abstract void PrimaryAttack();
 }

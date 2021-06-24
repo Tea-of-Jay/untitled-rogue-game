@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3360202679831077946}
-  - component: {fileID: 3360202679831077945}
+  - component: {fileID: -5349835611376011445}
   - component: {fileID: 3360202679831077944}
   - component: {fileID: -2997395798758443221}
   - component: {fileID: 3360202679831077947}
@@ -34,7 +34,7 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &3360202679831077945
+--- !u!114 &-5349835611376011445
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -43,10 +43,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 3360202679831077940}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 250286f28bd05cf43bd672c18a085fb7, type: 3}
+  m_Script: {fileID: 11500000, guid: 834583b4f3344924daa60df811bc44d1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerSpeed: 10
+  rb2d: {fileID: 0}
+  lookDir: {x: 1, y: 0}
+  velocity: {x: 0, y: 0}
+  playerSpeed: 5
   playerHP: 0
   playerMoney: 0
   primaryAttackPrefab: {fileID: 5175903710792714518, guid: 365b48acde3530d4fa7968814091a2af, type: 3}

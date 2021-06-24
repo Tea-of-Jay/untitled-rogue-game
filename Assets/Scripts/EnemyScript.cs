@@ -58,11 +58,14 @@ public class EnemyScript : MonoBehaviour
             case EnemyState.Travel:
             //Might not need anything here?
                 break;
-            //Currently unimplemented.
+            //Currently unimplemented, might not need anything here.
             case EnemyState.Aggro:
                 break;
             //Currently unimplemented.
             case EnemyState.Attack:
+                break;
+            //Default switch case.
+            default:
                 break;
         }
     }
@@ -126,21 +129,19 @@ public class EnemyScript : MonoBehaviour
                 {
                     Debug.Log("spotted!");
                     lastKnownPlayerPos = targetPlayer.position;
-                    lastKnownPlayerDir = (lastKnownPlayerPos - (Vector2)transform.position);
                     Debug.DrawRay((Vector2)transform.position, lastKnownPlayerDir, Color.black, 5.0f);
                 }
-                UpdateLineOfSight();
-                //update rightView to be a vector pointing 90 degrees to the right of lookDir, and leftView to point in the opposite direction of rightView.
-                rightView.x = lookDir.y; rightView.y = -1*lookDir.x;
-                leftView = -1*rightView;
-                //add to angleChange if there is a wall at an angle to the right, directly to the right, and/or the player is to the left.
-                //reduce from angleChange if there is a wall at an angle to the left, directly left, and/or player is to the right.
-                //if angleChange is positive, the rotation goes counterclockwise. if negative, clockwise.
-                //TODO: currently, enemy can get stuck in dead ends.
-                float angleChange = (wallAngleRight ? 0.1f : 0f) + (wallAngleLeft ? -0.1f : 0f) 
-                    + (wallRight ? 0.2f : 0f) + (wallLeft ? -0.2f : 0f)
-                        + ((Vector2.Dot(lastKnownPlayerDir, leftView) > 0) ? 0.15f : 0f) + ((Vector2.Dot(lastKnownPlayerDir, rightView) > 0) ? -0.15f : 0f);
-                Debug.Log("angle: " +angleChange);
+                lastKnownPlayerDir = (lastKnownPlayerPos - (Vector2)transform.position).normalized; //Update last known player direction from the enemy, since the enemy is always moving.
+                UpdateLineOfSight(); //Call UpdateLineOfSight, which will cast rays at varying angles from the lookDir and update bools depending on what is/is not seen.
+                rightView.x = lookDir.y; rightView.y = -1*lookDir.x; //update rightView to be a vector pointing 90 degrees to the right of lookDir,
+                leftView = -1*rightView; //and leftView to point in the opposite direction of rightView.
+                //Add to angleChange if there is a wall at an angle to the right, directly to the right, and/or the player is to the left.
+                //Reduce from angleChange if there is a wall at an angle to the left, directly left, and/or player is to the right.
+                //If angleChange is positive, the rotation goes counterclockwise. if negative, clockwise.
+                float angleChange = (wallAngleRight ? 0.2f : 0f) + (wallAngleLeft ? -0.2f : 0f) 
+                    + (wallRight ? 0.15f : 0f) + (wallLeft ? -0.15f : 0f)
+                        + ((Vector2.Dot(lastKnownPlayerDir, leftView) > 0.0f) ? 0.1f : 0f) + ((Vector2.Dot(lastKnownPlayerDir, rightView) > 0.0f) ? -0.1f : 0f);
+                //If the angle needs to change, then adjust lookDir.
                 if(angleChange != 0)
                 {
                     Vector2 newDir = lookDir;
@@ -148,21 +149,24 @@ public class EnemyScript : MonoBehaviour
                     newDir.y = lookDir.x * Mathf.Sin(angleChange) + lookDir.y * Mathf.Cos(angleChange);
                     lookDir = newDir.normalized;
                 }
-                    //if already looking close enough towards the last known player position, just set lookdir to playerdir.
+                //if already looking close enough towards the last known player position, just set lookdir to playerdir. (this might not work rn?)
                 else if(Vector2.Dot(lookDir, lastKnownPlayerDir) > 0.9f)
                 {
                         lookDir = lastKnownPlayerDir.normalized;
                 }
                 //if close enough to the last known player location, become idle.
+                //TODO: adjust this to be an attack state, or do something else. Idle is only temporary.
                 if(Vector2.Distance(lastKnownPlayerPos, transform.position) <= 0.5f)
                 {
                     ChangeState("Idle");
                     break;
                 }
+                //Adjust enemy position.
                 pos = pos + enemySpeed * lookDir * Time.deltaTime;
                 rb2d.MovePosition(pos);
             }
                 break;
+            //Default switch case.
             default:
                 break;
         }
@@ -200,6 +204,7 @@ public class EnemyScript : MonoBehaviour
             {
                 targetPlayer = player;
                 lastKnownPlayerPos = targetPlayer.position;
+                lastKnownPlayerDir = (lastKnownPlayerPos - (Vector2)transform.position).normalized;
                 return true;
             }
         }
@@ -253,7 +258,7 @@ public class EnemyScript : MonoBehaviour
                 state = EnemyState.Travel;
                 break;
             case "Aggro":
-                lookDir = (targetPlayer.position - transform.position);
+                lookDir = (targetPlayer.position - transform.position).normalized;
                 state = EnemyState.Aggro;
                 break;
             case "Attack":
