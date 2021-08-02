@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using UnityEngine;
 
 public class BulletScript : MonoBehaviour
@@ -49,6 +48,4 @@ public class BulletScript : MonoBehaviour
         velocity = vel;
         rb2d.AddForce(direction * projectileSpeed + (velocity*25));
     }
-
-
 }

@@ -46,13 +46,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 834583b4f3344924daa60df811bc44d1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rb2d: {fileID: 0}
-  lookDir: {x: 1, y: 0}
-  velocity: {x: 0, y: 0}
+  primaryCooldown: 0.5
+  secondaryCooldown: 2
+  utilityCooldown: 7
+  ultimateCooldown: 30
   playerSpeed: 5
   playerHP: 0
   playerMoney: 0
   primaryAttackPrefab: {fileID: 5175903710792714518, guid: 365b48acde3530d4fa7968814091a2af, type: 3}
+  secondaryAttackPrefab: {fileID: 0}
 --- !u!50 &3360202679831077944
 Rigidbody2D:
   serializedVersion: 4
