@@ -2,22 +2,17 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BulletScript : MonoBehaviour
+public class RoguePrimaryScript : PlayerAttackScript
 {
     float initTime;
     Rigidbody2D rb2d;
     public float projectileSpeed;
-    public int damage;
-    Vector2 direction = new Vector2(0, 0);
-    Vector2 velocity = new Vector2(0, 0);
 
-    //Awake is called when object is created.
-    void Awake()
+    protected override void ExtraSetup()
     {
+        base.ExtraSetup();
         initTime = Time.time;
-        rb2d = GetComponent<Rigidbody2D>();
     }
-
     //Update is called once per frame.
     void Update()
     {
@@ -29,23 +24,22 @@ public class BulletScript : MonoBehaviour
     }
 
     //Called when this BoxCollider2D hits another, which is 'solid.' Projectile self destructs.
-    void OnCollisionEnter2D(Collision2D solid)
+    void OnCollisionEnter2D(Collision2D collider)
     {
+        //If collider is an enemy, call it's TakeDamage function.
+        if(collider.gameObject.tag.Equals("Enemy"))
+        {
+            EnemyScript es = collider.gameObject.GetComponent<EnemyScript>();
+            es.TakeDamage(damage);
+        }
         Destroy(gameObject);
-        Debug.Log("Collided with " +solid.gameObject);
-    }
-
-    //TEMPORARY? Destroys projectile when it goes off screen.
-    private void OnBecameInvisible()
-    {
-        Destroy(gameObject);
+        Debug.Log("Collided with " +collider.gameObject);
     }
 
     //Launch projectile towards direction 'dir,' with varying velocity 'vel.'
-    public void Shoot(Vector2 dir, Vector2 vel)
+    public void Shoot(Vector2 dir)
     {
         direction = dir;
-        velocity = vel;
-        rb2d.AddForce(direction * projectileSpeed + (velocity*25));
+        rb2d.AddForce(direction * projectileSpeed);
     }
 }

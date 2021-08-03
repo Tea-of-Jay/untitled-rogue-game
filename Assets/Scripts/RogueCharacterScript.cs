@@ -7,8 +7,9 @@ public class RogueCharacterScript : PlayerController
     public override void PrimaryAttack()
     {
         GameObject primaryAttack = Instantiate(primaryAttackPrefab, rb2d.position, Quaternion.identity);
-        BulletScript bullet = primaryAttack.GetComponent<BulletScript>();
-        bullet.Shoot(lookDir, velocity);
+        RoguePrimaryScript knife = primaryAttack.GetComponent<RoguePrimaryScript>();
+        knife.SetUser(this.GetComponent<PlayerController>());
+        knife.Shoot(lookDir);
     }
     public override void SecondaryAttack()
     {

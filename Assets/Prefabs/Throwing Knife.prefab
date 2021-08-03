@@ -47,7 +47,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ad59d29021f06f4bbf8780ac7afe2d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  projectileSpeed: 1500
+  projectileSpeed: 200
   damage: 5
 --- !u!50 &3768571444703113563
 Rigidbody2D:
@@ -61,7 +61,7 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
-  m_Mass: 1
+  m_Mass: 0.1
   m_LinearDrag: 1
   m_AngularDrag: 0.05
   m_GravityScale: 0.1

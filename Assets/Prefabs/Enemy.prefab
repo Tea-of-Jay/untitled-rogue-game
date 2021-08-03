@@ -80,6 +80,7 @@ MonoBehaviour:
   state: 0
   enemySpeed: 3
   enemyHP: 10
+  XPGained: 5
 --- !u!50 &6771418909453929718
 Rigidbody2D:
   serializedVersion: 4

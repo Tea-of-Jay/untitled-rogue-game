@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+//TODO: eventually make this a parent script for multiple different enemy scripts
 public class EnemyScript : MonoBehaviour
 {
     Rigidbody2D rb2d;
@@ -19,7 +20,7 @@ public class EnemyScript : MonoBehaviour
             //A line to check for solid terrain directly to the right, A line to check for solid terrain directly to the left
     RaycastHit2D fwdCheck, rightAngleCheck, leftAngleCheck, rightCheck, leftCheck;
     public float enemySpeed;
-    public int enemyHP;
+    public int enemyHP, XPGained;
 
     //Start is called before the first frame update.
     void Start()
@@ -172,23 +173,6 @@ public class EnemyScript : MonoBehaviour
         }
     }
 
-    //If the enemy enters a trigger...
-    void OnTriggerEnter2D(Collider2D trigger)
-    {
-        //Determine which trigger type was entered.
-        switch(trigger.tag)
-        {
-            //If the enemy came into contact with a player's attack, deal damage and destroy the attack object.
-            case "PlayerAttack":
-            {
-                int dmg = trigger.gameObject.GetComponent<BulletScript>().damage;
-                TakeDamage(dmg);
-                Destroy(trigger.gameObject);
-                break;
-            }
-        }
-    }
-
     //Vision check to see if there is a valid player in line of sight to target, and become Aggro if so.
     bool CheckForPlayer()
     {
@@ -236,6 +220,7 @@ public class EnemyScript : MonoBehaviour
     }
 
     //Public HP reducer. Destroy this enemy if HP falls to 0 or below.
+    //TODO: Give XP & Money to all players on death
      public void TakeDamage(int d)
     {
         enemyHP -= d;

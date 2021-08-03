@@ -13,7 +13,7 @@ public abstract class PlayerController : MonoBehaviour
     public float primaryCooldown, secondaryCooldown, supportCooldown, movementCooldown, ultimateCooldown;
 
     public float playerSpeed;
-    public int playerHP, playerMoney;
+    public int playerHP, playerMoney, playerXP;
     public GameObject primaryAttackPrefab;
     public GameObject secondaryAttackPrefab;
 
