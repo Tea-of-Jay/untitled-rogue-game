@@ -9,7 +9,7 @@ public class PlayerAttackScript : MonoBehaviour
     protected PlayerController attackUser;
 
     //Awake is called when object is created.
-    void Awake()
+    protected virtual void Awake()
     {
         ExtraSetup();
     }

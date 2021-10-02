@@ -8,6 +8,11 @@ public class RoguePrimaryScript : PlayerAttackScript
     Rigidbody2D rb2d;
     public float projectileSpeed;
 
+    protected override void Awake()
+    {
+        base.Awake();
+        rb2d = GetComponent<Rigidbody2D>();
+    }
     protected override void ExtraSetup()
     {
         base.ExtraSetup();

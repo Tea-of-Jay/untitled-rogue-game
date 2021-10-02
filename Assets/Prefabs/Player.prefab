@@ -48,11 +48,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   primaryCooldown: 0.5
   secondaryCooldown: 2
-  utilityCooldown: 7
+  supportCooldown: 0
+  movementCooldown: 0
   ultimateCooldown: 30
-  playerSpeed: 5
+  baseSpeed: 5
   playerHP: 0
   playerMoney: 0
+  playerXP: 0
+  isInvis: 0
   primaryAttackPrefab: {fileID: 5175903710792714518, guid: 365b48acde3530d4fa7968814091a2af, type: 3}
   secondaryAttackPrefab: {fileID: 0}
 --- !u!50 &3360202679831077944

@@ -5,15 +5,20 @@ using UnityEngine;
 
 public abstract class PlayerController : MonoBehaviour
 {
+    //MOVEMENT/POSITION/VIEW
     protected Rigidbody2D rb2d;
     protected Vector2 lookDir = new Vector2(1, 0);
     protected Vector2 velocity = new Vector2(0, 0);
-    float horizontal, vertical, 
-        primaryCooldownTimer, secondaryCooldownTimer, supportCooldownTimer, movementCooldownTimer, ultimateCooldownTimer;
-    public float primaryCooldown, secondaryCooldown, supportCooldown, movementCooldown, ultimateCooldown;
+    protected float horizontal, vertical, 
+        primaryCooldownTimer, secondaryCooldownTimer, supportCooldownTimer, movementCooldownTimer, ultimateCooldownTimer, playerSpeed;
 
-    public float playerSpeed;
+    //STATS
+    public float primaryCooldown, secondaryCooldown, supportCooldown, movementCooldown, ultimateCooldown;
+    public float baseSpeed;
     public int playerHP, playerMoney, playerXP;
+    public bool isInvis;
+
+    //PREFAB REFS
     public GameObject primaryAttackPrefab;
     public GameObject secondaryAttackPrefab;
 
@@ -21,6 +26,7 @@ public abstract class PlayerController : MonoBehaviour
     void Start()
     {
         rb2d = GetComponent<Rigidbody2D>();
+        playerSpeed = baseSpeed;
     }
 
     //Update is called once per frame.
@@ -33,6 +39,7 @@ public abstract class PlayerController : MonoBehaviour
         //If M1 is held down and cooldown is 0, do primary attack.
         if(Input.GetMouseButton(0) && primaryCooldownTimer == 0.0f)
         {
+            Debug.Log("attackin");
             PrimaryAttack();
             primaryCooldownTimer = primaryCooldown;
         }
@@ -61,7 +68,8 @@ public abstract class PlayerController : MonoBehaviour
             ultimateCooldownTimer = ultimateCooldown;
         }
         //Call reduce cooldown function.
-        reduceCooldowns();
+        ReduceCooldowns();
+        CharacterUpdate();
     }
 
     //FixedUpdate is called each physics step.
@@ -79,8 +87,8 @@ public abstract class PlayerController : MonoBehaviour
         rb2d.MovePosition(pos);
     }
 
-    //For each cooldown, reduce the value by deltaTime if it's greater than 0. If not, greater than 0, leave it at 0.
-    void reduceCooldowns()
+    //For each cooldown, reduce the value by deltaTime if it's greater than 0. If not greater than 0, leave it at 0.
+    void ReduceCooldowns()
     {
         primaryCooldownTimer = (primaryCooldownTimer > 0.0f ? primaryCooldownTimer -= Time.deltaTime : 0.0f);
         secondaryCooldownTimer = (secondaryCooldownTimer > 0.0f ? secondaryCooldownTimer -= Time.deltaTime : 0.0f);
@@ -95,4 +103,5 @@ public abstract class PlayerController : MonoBehaviour
     public abstract void SupportSkill(); //Default C, support based damage/utility skill unlocked by levelling up.
     public abstract void MovementSkill(); //Default V, movement based damage/utility skill unlocked by levelling up.
     public abstract void UltimateSkill(); //Default Q, anything goes damage/utility skill unlocked by levelling up.
+    public abstract void CharacterUpdate(); //Any updates that may be character specific are done here.
 }

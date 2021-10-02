@@ -5,11 +5,14 @@ using UnityEngine;
 //TODO: eventually make this a parent script for multiple different enemy scripts
 public class EnemyScript : MonoBehaviour
 {
+    //MOVEMENT/POSITION
     Rigidbody2D rb2d;
     public EnemyState state;
     float timeTillMove;
     float timeToMove = 0.0f;
     float pi = Mathf.PI;
+
+    //SIGHT
     bool wallRight, wallAngleRight, wallLeft, wallAngleLeft;
     List<Collider2D> colliders = new List<Collider2D>();
     Vector2 lookDir, lastKnownPlayerPos, lastKnownPlayerDir, rightView, leftView;
@@ -19,8 +22,14 @@ public class EnemyScript : MonoBehaviour
         //A line to check for solid terrain at an angle to the right, A line to check for solid terrain at an angle to the left,
             //A line to check for solid terrain directly to the right, A line to check for solid terrain directly to the left
     RaycastHit2D fwdCheck, rightAngleCheck, leftAngleCheck, rightCheck, leftCheck;
+
+    //STATS
     public float enemySpeed;
     public int enemyHP, XPGained;
+
+    //STAT CONDITIONS
+    public bool stunned, slowed, fullPockets;
+    public float stunTime, slowTime, fullPocketTime;
 
     //Start is called before the first frame update.
     void Start()
@@ -118,17 +127,18 @@ public class EnemyScript : MonoBehaviour
                     ChangeState("Aggro"); //Become aggro.
                 }
             }
-                break;
+            break;
             //If aggro, move towards targeted player.
             case EnemyState.Aggro:
             {
                 //Check to see if a line between the enemy's position and player position is unobstructed.
                 RaycastHit2D visionCheck = Physics2D.Linecast((Vector2)transform.position, (Vector2)targetPlayer.position, LayerMask.GetMask("Terrain"));
                 Debug.DrawRay((Vector2)transform.position, (lastKnownPlayerPos - (Vector2)transform.position), Color.white);
+                PlayerController targetController = targetPlayer.GetComponentInParent<PlayerController>();
 
-                if(visionCheck.collider == null) //If there is no wall in between the enemy and player, update knowledge about player location.
+                if(visionCheck.collider == null && !targetController.isInvis) //If there is no wall in between the enemy and player, and player is visible, update knowledge about player location.
                 {
-                    Debug.Log("spotted!");
+                    //Debug.Log("spotted!");
                     lastKnownPlayerPos = targetPlayer.position;
                     Debug.DrawRay((Vector2)transform.position, lastKnownPlayerDir, Color.black, 5.0f);
                 }
